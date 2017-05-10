@@ -2,6 +2,7 @@
 package edu.berkeley.kaiju.cmdline;
 
 import edu.berkeley.kaiju.frontend.KaijuClient;
+import edu.berkeley.kaiju.config.Config;
 
 import java.lang.Exception;
 import java.lang.Long;
@@ -20,6 +21,8 @@ public class CommandLineClient {
     public static void main(String[] args) {
         try {
             KaijuClient client = new KaijuClient("127.0.0.1", 8080);
+
+            client.setIsolation(Config.IsolationLevel.READ_ATOMIC, Config.ReadAtomicAlgorithm.FASTER);
 
             MODE mode = MODE.PUT_ALL;
 

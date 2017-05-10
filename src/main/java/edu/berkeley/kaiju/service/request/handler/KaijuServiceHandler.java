@@ -62,6 +62,8 @@ public class KaijuServiceHandler implements IKaijuHandler {
             case READ_ATOMIC:
                 if (Config.getConfig().readatomic_algorithm == ReadAtomicAlgorithm.KEY_LIST) {
                     handler = new ReadAtomicListBasedKaijuServiceHandler(dispatcher);
+                } else if (Config.getConfig().readatomic_algorithm == ReadAtomicAlgorithm.FASTER) {
+                    handler = new ReadAtomicFasterListBasedKaijuServiceHandler(dispatcher);
                 } else if (Config.getConfig().readatomic_algorithm == ReadAtomicAlgorithm.TIMESTAMP) {
                     handler = new ReadAtomicStampBasedKaijuServiceHandler(dispatcher);
                 } else if (Config.getConfig().readatomic_algorithm == ReadAtomicAlgorithm.BLOOM_FILTER) {

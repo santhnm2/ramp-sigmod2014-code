@@ -101,10 +101,12 @@ public class Config {
 
     /*
      KEY_LIST = RAMP-Fast
+     FASTER = RAMP-Faster
      BLOOM_FILTER = RAMP-Hybrid
      TIMESTAMP = RAMP-Small
      */
     public enum ReadAtomicAlgorithm { KEY_LIST,
+                                      FASTER,
                                       BLOOM_FILTER,
                                       TIMESTAMP }
     @Parameter(names = { "-read_atomic_algorithm", "-ra_algorithm"},
