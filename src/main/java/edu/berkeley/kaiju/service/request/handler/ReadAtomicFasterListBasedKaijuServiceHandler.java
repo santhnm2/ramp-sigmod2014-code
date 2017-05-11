@@ -4,7 +4,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import edu.berkeley.kaiju.data.DataItem;
 import edu.berkeley.kaiju.exception.HandlerException;
+import edu.berkeley.kaiju.net.routing.OutboundRouter;
 import edu.berkeley.kaiju.service.request.RequestDispatcher;
+import edu.berkeley.kaiju.service.request.message.KaijuMessage;
+import edu.berkeley.kaiju.service.request.message.request.FasterPutAllRequest;
 import edu.berkeley.kaiju.service.request.message.response.KaijuResponse;
 import edu.berkeley.kaiju.util.Timestamp;
 
@@ -19,8 +22,34 @@ public class ReadAtomicFasterListBasedKaijuServiceHandler extends ReadAtomicKaij
         super(dispatcher);
     }
 
+    public void put_all(Map<String, byte[]> keyValuePairs) throws HandlerException {
+        try {
+            // generate a timestamp for this transaction
+            long timestamp = Timestamp.assignNewTimestamp();
+
+            // group keys by responsible server.
+            Map<Integer, Collection<String>> keysByServerID = OutboundRouter.getRouter().groupKeysByServerID(keyValuePairs.keySet());
+            Map<Integer, KaijuMessage> requestsByServerID = Maps.newHashMap();
+
+            for(int serverID : keysByServerID.keySet()) {
+                Map<String, DataItem> keyValuePairsForServer = Maps.newHashMap();
+                for(String key : keysByServerID.get(serverID)) {
+                    keyValuePairsForServer.put(key, instantiateKaijuItem(keyValuePairs.get(key),
+                                                                         keyValuePairs.keySet(),
+                                                                         timestamp));
+                }
+
+                requestsByServerID.put(serverID, new FasterPutAllRequest(keyValuePairsForServer, timestamp));
+            }
+
+            Collection<KaijuResponse> responses = dispatcher.multiRequest(requestsByServerID);
+            KaijuResponse.coalesceErrorsIntoException(responses);
+        } catch (Exception e) {
+            throw new HandlerException("Error processing request", e);
+        }
+    }
+
     public Map<String,byte[]> get_all(List<String> keys) throws HandlerException {
-        // TODO(santhnm2): Implement RAMP-Faster
         try {
             Collection<KaijuResponse> first_round_responses = fetch_from_server(keys);
 
@@ -43,8 +72,6 @@ public class ReadAtomicFasterListBasedKaijuServiceHandler extends ReadAtomicKaij
                             latestUpdateForKey.put(key, keyValuePair.getValue().getTimestamp());
                         }
                     }
-
-
                 }
             }
 
